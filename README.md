@@ -1,241 +1,198 @@
-🖐️ Detección de Gestos de Auxilio mediante Secuencias y Algoritmo KMP
-Proyecto de reconocimiento de patrones de emergencia usando visión simplificada
-📌 Descripción General
+# 🖐️ Sistema de Detección de Gestos de Auxilio con KMP
 
-Este proyecto implementa un sistema de detección de gestos de auxilio usando:
+Proyecto de reconocimiento de patrones de emergencia usando **MediaPipe**, **OpenCV** y el algoritmo **KMP**
 
-Captura de video a través de OpenCV
+## 📋 Requisitos del Sistema
 
-Extracción de un estado simbólico por cada fotograma
+- **Python 3.12.1** (recomendado)
+- Cámara web funcional
+- Sistema operativo: Windows, macOS o Linux
 
-Construcción de una secuencia de caracteres que representan la posición o forma de la mano
+## 🚀 Instalación y Ejecución
 
-Búsqueda del patrón crítico mediante el algoritmo KMP (Knuth–Morris–Pratt)
+### 1. Instalación de dependencias
+```bash
+pip install -r requirements.txt
+```
 
-El objetivo es crear una solución ligera, rápida y sin uso de inteligencia artificial, capaz de detectar gestos universales de ayuda, como la señal difundida internacionalmente en 2021.
-
-🎯 Objetivo del Proyecto
-
-Construir un sistema capaz de:
-
-Observar la mano del usuario mediante cámara.
-
-Clasificar la forma de la mano en estados discretos (ej. A, B, C).
-
-Generar una secuencia de símbolos en tiempo real.
-
-Detectar si dentro de la secuencia aparece un patrón que corresponda a un gesto de auxilio.
-
-Activar una alerta inmediata si el patrón es encontrado.
-
-🧩 Arquitectura del Sistema
-
-El sistema está compuesto por cuatro módulos:
-
-1️⃣ Módulo de Captura (OpenCV)
-
-Obtiene fotogramas en tiempo real.
-
-Convierte cada frame a escala de grises.
-
-Aplica suavizado para reducir ruido.
-
-Segmenta la región de la mano mediante:
-
-umbralización,
-
-contornos,
-
-detección de convexidad.
-
-No reconoce imágenes a nivel de IA; solo detecta formas básicas.
-
-2️⃣ Módulo de Clasificación de Estado
-
-Cada fotograma extraído se convierte a un símbolo basado en una métrica sencilla, por ejemplo:
-
-Estado de la mano	Descripción	Símbolo
-Mano abierta	contorno grande + dedos extendidos	A
-Pulgar oculto	detección de un único cambio en convexidad	B
-Mano cerrada	contorno pequeño + sin extensiones	C
-
-Estos valores pueden ajustarse según el prototipo o iluminación.
-
-3️⃣ Módulo de Secuencias
-
-A medida que cada fotograma genera un símbolo, se construye una cadena:
-
-AAAABBBCCCCCAAABB...
-
-
-Esto representa la evolución temporal del gesto.
-
-4️⃣ Módulo de Detección por KMP
-
-El algoritmo KMP se utiliza para encontrar el patrón objetivo dentro de la secuencia.
-
-Ejemplo del gesto internacional de auxilio:
-
-A = mano abierta  
-B = pulgar doblado  
-C = mano cerrada  
-Patrón final = "ABC"
-
-
-KMP permite:
-
-Búsqueda en tiempo lineal
-
-Procesamiento en streaming
-
-Comparación eficiente incluso con cadenas largas
-
-La detección se ejecuta en cada actualización de la secuencia.
-
-🧪 Flujo Completo
-
-El usuario realiza un gesto.
-
-La cámara captura el movimiento.
-
-Cada frame se clasifica como A, B o C.
-
-El buffer de secuencia almacena los últimos N símbolos.
-
-KMP analiza si el patrón (“ABC”) aparece en el buffer.
-
-Si se detecta → se activa una alerta gráfica, sonora o de log.
-
-🚨 Patrones Definidos
-
-Actualmente, el sistema detecta:
-
-"ABC" → gesto de auxilio (señal internacional)
-
-
-Pero la arquitectura permite agregar:
-
-patrones para golpes,
-
-señales repetitivas,
-
-movimientos bruscos,
-
-patrones de gritos (si se integra audio),
-
-gestos personalizados.
-
-⚙️ Tecnologías Utilizadas
-
-Python 3.x
-
-OpenCV
-
-Numpy
-
-Algoritmo KMP implementado manualmente
-
-Interfaz simple en consola o GUI opcional
-
-📁 Estructura del Proyecto
-/proyecto-kmp-auxilio
-│
-├── src/
-│   ├── capture.py          # Captura de cámara
-│   ├── classifier.py       # Clasificación de estados
-│   ├── sequence_buffer.py  # Gestión de secuencia de símbolos
-│   ├── kmp.py              # Implementación del algoritmo KMP
-│   ├── detector.py         # Integración de todos los módulos
-│   └── main.py             # Punto de entrada
-│
-├── assets/
-│   └── demo_videos/        # Videos de demostración
-│
-├── README.md
-└── requirements.txt
-
-🧠 Implementación del Algoritmo KMP (resumen técnico)
-
-El algoritmo se compone de:
-
-🔹 1. Función LPS (Longest Prefix Suffix)
-
-Construye una tabla que evita comparaciones redundantes.
-
-🔹 2. Búsqueda del patrón
-
-Recorre el texto (secuencia) comparando con el patrón.
-
-Complejidad:
-
-Preprocesamiento: O(m)
-
-Búsqueda: O(n)
-(n = longitud de la secuencia, m = tamaño del patrón)
-
-Esto permite trabajar en tiempo real sin perder rendimiento.
-
-🖥️ Uso
-
-Ejecutar:
-
+### 2. Ejecutar el sistema
+```bash
 python main.py
+```
 
+## 📦 Dependencias
 
-La consola mostrará:
+```
+opencv-python==4.8.1.78
+Pillow==10.0.1
+mediapipe==0.10.0
+numpy==1.24.3
+```
 
-video con contorno detectado
+## 📌 Descripción General
 
-símbolo actual (A, B, C)
+Este proyecto implementa un sistema avanzado de detección de gestos de auxilio usando:
 
-secuencia generada
+✅ **Captura de video** en tiempo real con OpenCV
+✅ **Detección de landmarks** de manos usando MediaPipe
+✅ **Clasificación inteligente** de gestos basada en dedos levantados
+✅ **Construcción de secuencias** temporales de gestos
+✅ **Detección de patrones** usando el algoritmo KMP optimizado
+✅ **Interfaz gráfica** multi-ventana con monitoreo en tiempo real
 
-alertas si se detecta el patrón
+## 🎯 Características Principales
 
-📈 Ventajas del Enfoque
+### 🖱️ Interfaz Gráfica Completa
+- **Ventana Principal**: Control del sistema y configuración
+- **Ventana de Cámara**: Visualización en tiempo real con landmarks
+- **Ventana de Estado**: Monitoreo de gestos y secuencias detectadas
+- **Ventana de Alertas**: Historial de detecciones de auxilio
+- **Popup de Alerta**: Notificaciones inmediatas de emergencia
 
-No usa IA: funciona en hardware básico
+### 👋 Detección de Gestos
+El sistema reconoce tres gestos principales:
 
-Ultra eficiente (O(n))
+| Gesto | Descripción | Símbolo |
+|-------|-------------|---------|
+| **A** | Mano Abierta (5 dedos) | `A` |
+| **B** | 3 Dedos Arriba | `B` |
+| **C** | Puño Cerrado | `C` |
 
-Fácil de extender a múltiples gestos
+### 🔍 Patrón de Auxilio
+El sistema detecta la secuencia: **`AAABBBCCC`**
+- **AAA**: Mano abierta (llamar atención)
+- **BBB**: 3 dedos (señal específica)
+- **CCC**: Puño cerrado (confirmación de auxilio)
 
-Bajo consumo de CPU
+## 🏗️ Arquitectura del Sistema
 
-Interpretable y transparente
+```
+proyecto70%/
+│
+├── main.py                 # Punto de entrada principal
+├── requirements.txt        # Dependencias del proyecto
+│
+├── interfaz/              # Módulos de interfaz gráfica
+│   ├── ventana_cam.py     # Ventana de cámara
+│   ├── ventana_estado.py  # Ventana de estado
+│   ├── ventana_alertas.py # Ventana de alertas
+│   └── ventana_popup_alerta.py # Popups de alerta
+│
+├── vision/                # Módulos de visión computacional
+│   ├── detector_gestos.py    # Detección con MediaPipe
+│   ├── detector_color.py     # Procesamiento de color
+│   ├── detector_zonas.py     # Detección de zonas
+│   └── procesador_eventos.py # Procesamiento de eventos
+│
+├── kmp/                   # Algoritmo de detección de patrones
+│   └── detector_patron.py   # Implementación KMP optimizada
+│
+├── utils/                 # Utilidades del sistema
+│   ├── helpers.py         # Funciones auxiliares
+│   └── reloj.py          # Control de tiempo
+│
+└── data/                  # Datos del sistema
+    └── alertas.txt       # Log de alertas detectadas
+```
 
-Ideal para demostraciones educativas y concursos
+## 🔧 Funcionamiento Técnico
 
-🧩 Limitaciones
+### 1. **Captura y Procesamiento**
+- MediaPipe detecta hasta **21 landmarks** por mano
+- Análisis de **confianza mínima del 50%**
+- Procesamiento a **30 FPS** en tiempo real
 
-Sensible a iluminación irregular
+### 2. **Clasificación de Gestos**
+```python
+def count_fingers(self, landmarks):
+    # Algoritmo de conteo basado en landmarks
+    # Detecta dedos levantados usando coordenadas 3D
+    # Clasifica en estados A, B, C
+```
 
-Requiere que la mano esté relativamente centrada
+### 3. **Algoritmo KMP Optimizado**
+- **Preprocesamiento**: O(m) donde m = longitud del patrón
+- **Búsqueda**: O(n) donde n = longitud de la secuencia
+- **Detección de nuevos patrones** sin solapamiento
+- **Eficiencia en tiempo real** garantizada
 
-No reconoce gestos complejos
+### 4. **Sistema de Alertas**
+- **Detección inmediata** del patrón `AAABBBCCC`
+- **Popup visual** con timestamp
+- **Log persistente** en archivo de texto
+- **Prevención de duplicados** con control de índices
 
-Solo detecta patrones definidos explícitamente
+## 🎮 Uso del Sistema
 
-🛠️ Posibles Mejoras
+1. **Iniciar el programa**: `python main.py`
+2. **Abrir ventanas**: Usar botones en la interfaz principal
+3. **Posicionar la mano** frente a la cámara
+4. **Realizar la secuencia**: AAA → BBB → CCC
+5. **Confirmar alerta** en el popup que aparece
 
-Integrar audio (transformado a símbolos)
+## 🛠️ Configuración Avanzada
 
-Implementar varios patrones KMP simultáneos
+### Ajuste de Sensibilidad
+```python
+# En detector_gestos.py
+self.hands = self.mp_hands.Hands(
+    min_detection_confidence=0.5,  # Ajustar sensibilidad
+    min_tracking_confidence=0.5    # Ajustar seguimiento
+)
+```
 
-Interfaz gráfica final
+### Personalización del Patrón
+```python
+# En main.py
+self.detector_patron = DetectorPatron("AAABBBCCC")  # Cambiar patrón
+```
 
-Soporte para diferentes manos (izquierda/derecha)
+## 📊 Ventajas del Sistema
 
-Integrar filtros adaptativos por piel
+✅ **Sin dependencias de IA pesada**: Usa algoritmos clásicos eficientes
+✅ **Tiempo real**: Detección instantánea sin latencia
+✅ **Robusto**: Funciona en diferentes condiciones de iluminación
+✅ **Escalable**: Fácil agregar nuevos gestos y patrones
+✅ **Portable**: Corre en cualquier sistema con Python
+✅ **Open Source**: Código completamente auditable
 
-🏁 Conclusión
+## 🎯 Casos de Uso
 
-Este proyecto demuestra que es posible detectar gestos de auxilio sin necesidad de inteligencia artificial, simplemente combinando:
+- **Emergencias domésticas**: Solicitar ayuda de forma discreta
+- **Entornos ruidosos**: Comunicación visual cuando no se puede hablar
+- **Seguridad personal**: Activación de alertas silenciosas
+- **Accesibilidad**: Alternativa para personas con limitaciones de habla
+- **Demostración educativa**: Enseñanza de algoritmos y visión computacional
 
-visión computacional simplificada
+## 🔍 Limitaciones Conocidas
 
-abstracción simbólica
+- Requiere **buena iluminación** para detección óptima
+- **Una mano por vez** (configurable para múltiples manos)
+- Sensible a **movimientos muy rápidos**
+- Necesita **calibración inicial** en algunos entornos
 
-y el algoritmo clásico KMP
+## 🚀 Futuras Mejoras
 
-La solución es ligera, rápida y funcional para demostraciones reales y entornos con recursos limitados.
+- [ ] Detección de múltiples patrones simultáneos
+- [ ] Integración con servicios de emergencia
+- [ ] Reconocimiento de emociones faciales
+- [ ] Soporte para gestos con dos manos
+- [ ] Configuración de patrones personalizados via GUI
+- [ ] Integración con dispositivos IoT
+
+## 👥 Contribución
+
+Este proyecto está abierto a contribuciones. Para colaborar:
+
+1. Fork del repositorio
+2. Crear rama de feature
+3. Implementar mejoras
+4. Crear pull request
+
+## 📄 Licencia
+
+Proyecto educativo de código abierto.
+
+---
+
+**Desarrollado con ❤️ usando Python, OpenCV, MediaPipe y el algoritmo KMP**
