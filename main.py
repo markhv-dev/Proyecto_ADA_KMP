@@ -5,6 +5,12 @@ import threading
 import time
 from datetime import datetime
 import os
+import sys
+
+# Configurar encoding para Windows
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 from interfaz.ventana_cam import VentanaCamara
 from interfaz.ventana_estado import VentanaEstado
@@ -15,24 +21,36 @@ from vision.procesador_eventos import ProcesadorEventos
 from kmp.detector_patron import DetectorPatron
 from utils.reloj import Reloj
 
+# ✅ NUEVAS IMPORTACIONES
+from config.gestos_auxilio import GestosAuxilio
+from config.patrones_auxilio import PatronesAuxilio
+
 class SistemaDeteccionAuxilio:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Sistema de Detección de Señal de Auxilio - Por Gestos")
-        self.root.geometry("400x250")
+        self.root.title("Sistema de Detección de Auxilio por Gestos")
+        self.root.geometry("450x300")
         
-        # Inicializar componentes
+        # ✅ NUEVO: Sistema de gestos y patrones mejorado
+        self.gestos_auxilio = GestosAuxilio()
+        self.patrones_auxilio = PatronesAuxilio()
+        
+        # Componentes existentes
         self.detector_gestos = DetectorGestos()
-        self.detector_patron = DetectorPatron("AAABBBCCC")
         self.procesador_eventos = ProcesadorEventos()
         self.reloj = Reloj()
+        
+        # ✅ NUEVO: Sistema multi-patrón
+        self.detectores_patron = self._inicializar_detectores_patron()
+        
+        # Sistema de sonido
+        self.alerta_sonora = self._inicializar_sonido()
         
         # Variables compartidas
         self.secuencia = ""
         self.ultimo_gesto = ""
-        self.patron_detectado = False
-        self.ultimo_indice_detectado = -1
         self.alertas = []
+        self.ultimo_indice_detectado = -1
         
         # Configurar ventanas
         self.ventana_camara = None
@@ -42,20 +60,110 @@ class SistemaDeteccionAuxilio:
         self.cap = None
         self.ejecutando = False
         
+        # ✅ VERIFICAR CONFIGURACIÓN
+        self._verificar_carga_config()
+        
         self._crear_interfaz_principal()
+        self._mostrar_info_sistema()
+    
+    def _verificar_carga_config(self):
+        """Verificar que la configuración se cargó correctamente"""
+        print("VERIFICANDO CONFIGURACION...")
+        
+        # Verificar gestos
+        if hasattr(self, 'gestos_auxilio'):
+            print(f"OK Gestos cargados: {list(self.gestos_auxilio.gestos_auxilio.keys())}")
+        else:
+            print("ERROR: gestos_auxilio NO se cargo")
+        
+        # Verificar patrones
+        if hasattr(self, 'patrones_auxilio'):
+            print(f"OK Patrones cargados: {list(self.patrones_auxilio.patrones_auxilio.keys())}")
+        else:
+            print("ERROR: patrones_auxilio NO se cargo")
+        
+        # Verificar detectores
+        if hasattr(self, 'detectores_patron'):
+            print(f"OK Detectores creados: {list(self.detectores_patron.keys())}")
+        else:
+            print("ERROR: detectores_patron NO se crearon")
+        
+        print("CONFIGURACION VERIFICADA")
+    
+    def _inicializar_detectores_patron(self):
+        """Inicializar detectores KMP para todos los patrones de auxilio"""
+        detectores = {}
+        try:
+            print("Inicializando detectores de patrones...")
+            
+            if not hasattr(self, 'patrones_auxilio'):
+                print("ERROR: patrones_auxilio no disponible")
+                return detectores
+                
+            patrones = self.patrones_auxilio.patrones_auxilio
+            if not patrones:
+                print("ERROR: No hay patrones definidos")
+                return detectores
+                
+            print(f"Creando detectores para {len(patrones)} patrones...")
+            
+            for nombre_patron, info in patrones.items():
+                try:
+                    detector = DetectorPatron(info["patron"])
+                    detectores[nombre_patron] = detector
+                    print(f"OK Detector: {nombre_patron} -> {info['patron']}")
+                except Exception as e:
+                    print(f"Error creando detector {nombre_patron}: {e}")
+                    
+            print(f"Detectores inicializados: {len(detectores)}/{len(patrones)}")
+            
+        except Exception as e:
+            print(f"ERROR en _inicializar_detectores_patron: {e}")
+        
+        return detectores
+        
+    def _inicializar_sonido(self):
+        """Inicializar sistema de sonido con manejo de errores"""
+        try:
+            from utils.alerta_sonora import AlertaSonora
+            return AlertaSonora()
+        except ImportError as e:
+            print(f"Advertencia: No se pudo cargar sistema de sonido: {e}")
+            class SonidoDummy:
+                def sonar_alerta(self): 
+                    print("[SONIDO] Alerta sonora simulada")
+                def silenciar(self): 
+                    print("[SONIDO] Silenciado")
+                def activar(self): 
+                    print("[SONIDO] Activado")
+                activado = True
+            return SonidoDummy()
+    
+    def _mostrar_info_sistema(self):
+        """Mostrar información del sistema al iniciar"""
+        print("=" * 60)
+        print("SISTEMA DE DETECCION DE AUXILIO POR GESTOS")
+        print("=" * 60)
+        print("GESTOS DISPONIBLES:")
+        for letra, info in self.gestos_auxilio.gestos_auxilio.items():
+            print(f"   {letra}: {info['nombre']} - {info['descripcion']}")
+        print("\nPATRONES DE AUXILIO:")
+        for nombre, info in self.patrones_auxilio.patrones_auxilio.items():
+            print(f"   {info['patron']}: {info['descripcion']} ({info['urgencia']})")
+        print("=" * 60)
         
     def _crear_interfaz_principal(self):
         frame_principal = ttk.Frame(self.root, padding="20")
         frame_principal.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         titulo = ttk.Label(frame_principal, 
-                          text="Sistema de Detección por Gestos", 
+                          text="Sistema de Detección de Auxilio", 
                           font=("Arial", 14, "bold"))
         titulo.grid(row=0, column=0, columnspan=2, pady=(0, 15))
         
-        # Información de gestos
+        # ✅ ACTUALIZADO: Información de gestos con D
         info_gestos = ttk.Label(frame_principal, 
-                               text="Gestos:\n• A: Mano abierta (5 dedos)\n• B: 3 dedos arriba\n• C: Puño cerrado\n• Mantener 1.5s para repetir",
+                               text="Gestos de Auxilio:\n• A: Mano abierta\n• B: Tres dedos\n• C: Puño cerrado\n• D: Pulgar médico\n• Mantener 1s para repetir",
                                justify=tk.LEFT)
         info_gestos.grid(row=1, column=0, columnspan=2, pady=(0, 15))
         
@@ -79,9 +187,41 @@ class SistemaDeteccionAuxilio:
                                 command=self.abrir_ventana_alertas)
         btn_alertas.grid(row=4, column=0, columnspan=2, pady=5, sticky="ew")
         
+        # Control de sonido
+        frame_sonido = ttk.Frame(frame_principal)
+        frame_sonido.grid(row=5, column=0, columnspan=2, pady=10, sticky="ew")
+        
+        self.btn_sonido = ttk.Button(
+            frame_sonido, 
+            text="🔊 Silenciar Alertas", 
+            command=self.toggle_sonido
+        )
+        self.btn_sonido.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.label_estado_sonido = ttk.Label(
+            frame_sonido, 
+            text="Sonido: ACTIVADO", 
+            foreground="green",
+            font=("Arial", 9)
+        )
+        self.label_estado_sonido.pack(side=tk.LEFT)
+        
         # Configurar grid
         frame_principal.columnconfigure(0, weight=1)
         frame_principal.columnconfigure(1, weight=1)
+        
+    def toggle_sonido(self):
+        """Alternar entre sonido activado/desactivado"""
+        if self.alerta_sonora.activado:
+            self.alerta_sonora.silenciar()
+            self.btn_sonido.config(text="🔈 Activar Sonido")
+            self.label_estado_sonido.config(text="Sonido: SILENCIADO", foreground="red")
+            print("[SONIDO] Alertas sonoras desactivadas")
+        else:
+            self.alerta_sonora.activar()
+            self.btn_sonido.config(text="🔊 Silenciar Alertas")
+            self.label_estado_sonido.config(text="Sonido: ACTIVADO", foreground="green")
+            print("[SONIDO] Alertas sonoras activadas")
         
     def iniciar_sistema(self):
         if self.ejecutando:
@@ -107,15 +247,25 @@ class SistemaDeteccionAuxilio:
         self.hilo_procesamiento.daemon = True
         self.hilo_procesamiento.start()
         
-        print("Sistema de gestos iniciado")
+        print("Sistema de deteccion de auxilio iniciado")
         
     def detener_sistema(self):
         self.ejecutando = False
+        time.sleep(0.5)
+        
         if self.cap:
             self.cap.release()
+            self.cap = None
+            
         if self.ventana_camara:
-            self.ventana_camara.cerrar()
-        print("Sistema detenido")
+            try:
+                self.ventana_camara.cerrar()
+            except:
+                pass
+            self.ventana_camara = None
+            
+        cv2.destroyAllWindows()
+        print("Sistema detenido correctamente")
         
     def abrir_ventana_estado(self):
         if not self.ventana_estado:
@@ -131,81 +281,136 @@ class SistemaDeteccionAuxilio:
             self.ventana_alertas.mostrar()
     
     def _procesar_video(self):
-        while self.ejecutando and self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if not ret:
-                break
+        try:
+            while self.ejecutando and self.cap.isOpened():
+                ret, frame = self.cap.read()
+                if not ret:
+                    print("Error: No se pudo leer frame de la cámara")
+                    break
+                    
+                frame = cv2.flip(frame, 1)
                 
-            # Voltear frame horizontalmente para efecto espejo
-            frame = cv2.flip(frame, 1)
-            
-            # Detectar gestos
-            gesto_confirmado = self.procesador_eventos.gesto_esta_confirmado()
-            frame_procesado, gesto = self.detector_gestos.process_frame(frame, gesto_confirmado)
-            
-            # Procesar evento
-            if gesto:
-                secuencia_anterior = self.secuencia
-                self.secuencia = self.procesador_eventos.agregar_letra(gesto, self.secuencia)
+                gesto_confirmado = self.procesador_eventos.gesto_esta_confirmado()
+                frame_procesado, gesto = self.detector_gestos.process_frame(frame, gesto_confirmado)
                 
-                # Si se agregó un nuevo gesto, activar efecto de color azul
-                if self.secuencia != secuencia_anterior:
-                    self.detector_gestos.activar_efecto_color()
-                    print(f"🎯 Gesto '{gesto}' agregado a secuencia: {self.secuencia}")
-                    
-                    # Detectar patrón
-                    resultado = self.detector_patron.detectar_patron(self.secuencia, self.ultimo_indice_detectado)
-                    
-                    if resultado["detectado"] and resultado["nuevo"]:
-                        self.patron_detectado = True
-                        self.ultimo_indice_detectado = resultado["indice"]
-                        self._activar_alerta()
-                        print(f"🚨 ALERTA! Patrón detectado en índice: {resultado['indice']}")
-                    else:
-                        self.patron_detectado = False
-                    
-            # Actualizar ventana de cámara
-            if self.ventana_camara:
+                if gesto:
+                    print(f"[DETECTADO] Gesto: {gesto}")
+                
+                if gesto:
+                    secuencia_anterior = self.secuencia
+                    self.root.after(0, self._procesar_gesto_en_main_thread, gesto, secuencia_anterior, frame_procesado)
+                else:
+                    if self.ventana_camara and self.ventana_camara.esta_abierta():
+                        self.root.after(0, self._actualizar_camara_en_main_thread, frame_procesado, gesto)
+                
+                time.sleep(0.05)
+                        
+        except Exception as e:
+            print(f"Error en hilo de video: {e}")
+        finally:
+            if self.cap:
+                self.cap.release()
+
+    def _procesar_gesto_en_main_thread(self, gesto, secuencia_anterior, frame_procesado):
+        """Procesar gesto en el hilo principal de Tkinter"""
+        try:
+            nueva_secuencia = self.procesador_eventos.agregar_letra(gesto, self.secuencia)
+            
+            print(f"DEBUG: Gesto '{gesto}' - Secuencia anterior: '{secuencia_anterior}' - Nueva: '{nueva_secuencia}'")
+            
+            if nueva_secuencia != self.secuencia:
+                self.secuencia = nueva_secuencia
+                self.detector_gestos.activar_efecto_color()
+                print(f"AUXILIO Gesto '{gesto}' AGREGADO - Secuencia actual: {self.secuencia}")
+                
+                # ✅ NUEVO: Verificar TODOS los patrones de auxilio
+                patrones_detectados = self._verificar_patrones_auxilio()
+                print(f"DEBUG: Patrones verificados: {len(patrones_detectados)} detectados")
+                
+                for patron_info in patrones_detectados:
+                    print(f"ALERTA ACTIVADA: {patron_info['descripcion']}")
+                    self._activar_alerta_especifica(patron_info)
+            
+            if self.ventana_camara and self.ventana_camara.esta_abierta():
                 self.ventana_camara.actualizar_frame(frame_procesado, gesto)
                 
-            # Actualizar ventana de estado si está abierta
             if self.ventana_estado and self.ventana_estado.esta_abierta():
-                self.ventana_estado.actualizar_estado(self.secuencia, self.patron_detectado)
+                self.ventana_estado.actualizar_estado(self.secuencia, bool(patrones_detectados))
                 
-            time.sleep(0.05)  # Controlar FPS
+        except Exception as e:
+            print(f"Error procesando gesto: {e}")
+
+    def _verificar_patrones_auxilio(self):
+        """Verificar todos los patrones de auxilio"""
+        patrones_detectados = []
+        
+        print(f"VERIFICANDO PATRONES en secuencia: '{self.secuencia}'")
+        
+        for nombre_patron, detector in self.detectores_patron.items():
+            info_patron = self.patrones_auxilio.patrones_auxilio[nombre_patron]
+            resultado = detector.detectar_patron(self.secuencia, self.ultimo_indice_detectado)
             
-    def _activar_alerta(self):
-        # Registrar alerta
-        timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        alerta = f"ALERTA - {timestamp}"
-        self.alertas.append(alerta)
+            print(f"Patron '{info_patron['patron']}': {resultado}")
+            
+            if resultado["detectado"] and resultado["nuevo"]:
+                self.ultimo_indice_detectado = resultado["indice"]
+                patrones_detectados.append({
+                    'nombre': nombre_patron,
+                    'patron': info_patron['patron'],
+                    'descripcion': info_patron['descripcion'],
+                    'urgencia': info_patron['urgencia'],
+                    'accion': info_patron['accion']
+                })
+                print(f"PATRON DETECTADO: {info_patron['patron']}")
         
-        # Guardar en archivo
-        self._guardar_alerta(alerta)
+        print(f"Total patrones detectados: {len(patrones_detectados)}")
+        return patrones_detectados
+
+    def _activar_alerta_especifica(self, patron_info):
+        """Activar alerta específica según el patrón detectado"""
+        print(f"Activando alerta: {patron_info['urgencia']} - {patron_info['accion']}")
         
-        # Mostrar ventana de alerta
+        # Sonido de alerta
+        self.alerta_sonora.sonar_alerta()
+        
+        # Popup de alerta
         VentanaAlertaPopup()
         
-        # Actualizar ventana de alertas si está abierta
+        # Guardar en log
+        self._guardar_alerta_auxilio(patron_info)
+        
+        # Actualizar interfaz si está abierta
         if self.ventana_alertas and self.ventana_alertas.esta_abierta():
             self.ventana_alertas.actualizar_alertas()
-            
-    def _guardar_alerta(self, alerta):
+
+    def _actualizar_camara_en_main_thread(self, frame_procesado, gesto):
+        """Actualizar cámara en hilo principal"""
+        try:
+            if self.ventana_camara and self.ventana_camara.esta_abierta():
+                self.ventana_camara.actualizar_frame(frame_procesado, gesto)
+        except Exception as e:
+            print(f"Error actualizando cámara: {e}")
+
+    def _guardar_alerta_auxilio(self, patron_info):
+        """Guardar alerta de auxilio en archivo"""
+        timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        alerta = f"AUXILIO [{patron_info['urgencia']}] - {patron_info['descripcion']} - {timestamp}"
+        
         os.makedirs("data", exist_ok=True)
-        with open("data/alertas.txt", "a", encoding="utf-8") as f:
+        with open("data/alertas_auxilio.txt", "a", encoding="utf-8") as f:
             f.write(f"{alerta}\n")
+        
+        self.alertas.append(alerta)
             
     def obtener_alertas(self):
         try:
-            with open("data/alertas.txt", "r", encoding="utf-8") as f:
+            with open("data/alertas_auxilio.txt", "r", encoding="utf-8") as f:
                 return [line.strip() for line in f.readlines() if line.strip()]
         except FileNotFoundError:
             return []
             
     def ejecutar(self):
         self.root.mainloop()
-        
-        # Limpiar al cerrar
         self.detener_sistema()
 
 if __name__ == "__main__":
