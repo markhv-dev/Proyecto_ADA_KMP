@@ -10,15 +10,12 @@ class VentanaAlertas:
         
         self._crear_interfaz()
         self.actualizar_alertas()
-        
-        # Configurar cierre seguro
         self.ventana.protocol("WM_DELETE_WINDOW", self.cerrar)
         
     def _crear_interfaz(self):
         frame_principal = ttk.Frame(self.ventana, padding="20")
         frame_principal.pack(fill=tk.BOTH, expand=True)
         
-        # Título
         titulo = ttk.Label(frame_principal, 
                           text="Historial de Alertas", 
                           font=("Arial", 16, "bold"))
@@ -34,7 +31,7 @@ class VentanaAlertas:
         )
         self.texto_alertas.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
         
-        # Botones
+        # Botones de control
         frame_botones = ttk.Frame(frame_principal)
         frame_botones.pack(fill=tk.X)
         
@@ -65,7 +62,7 @@ class VentanaAlertas:
                 
     def limpiar_historial(self):
         try:
-            open("data/alertas.txt", "w").close()
+            open("data/alertas_auxilio.txt", "w").close()
             self.actualizar_alertas()
         except Exception as e:
             print(f"Error limpiando historial: {e}")

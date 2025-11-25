@@ -32,9 +32,7 @@ class GestosAuxilio:
         }
     
     def obtener_info_gesto(self, letra_gesto):
-        """Obtener información de un gesto específico"""
         return self.gestos_auxilio.get(letra_gesto, None)
     
     def listar_gestos(self):
-        """Listar todos los gestos disponibles"""
         return list(self.gestos_auxilio.keys())
