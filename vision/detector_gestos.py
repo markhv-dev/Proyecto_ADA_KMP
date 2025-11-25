@@ -15,17 +15,18 @@ class DetectorGestos:
             min_tracking_confidence=0.5
         )
         
-        # Definir gestos
+        # S ACTUALIZADO: Definir gestos de auxilio
         self.gestures = {
             'A': 'Mano Abierta (5 dedos)',
-            'B': '3 Dedos Arriba',
-            'C': 'Puño Cerrado'
+            'B': '3 Dedos Emergencia', 
+            'C': 'Puño Cerrado',
+            'D': 'Pulgar Auxilio Médico'  #  NUEVO GESTO
         }
         
         # Variables para efecto de color
         self.efecto_color_activo = False
         self.tiempo_inicio_color = 0
-        self.duracion_color = 0.5  # segundos que dura el efecto azul
+        self.duracion_color = 0.5
         
     def count_fingers(self, landmarks):
         """Contar dedos levantados basado en los landmarks"""
@@ -53,22 +54,37 @@ class DetectorGestos:
         return fingers
     
     def recognize_gesture(self, fingers):
-        """Reconocer el gesto basado en los dedos levantados"""
+        """Reconocer gestos de auxilio específicos"""
         total_fingers = sum(fingers)
         
-        # Mano abierta (5 dedos)
+        # 🚨 GESTOS DE AUXILIO
         if total_fingers == 5:
-            return 'A'
-        # 3 dedos arriba
+            return 'A'  # Mano abierta
+        
         elif total_fingers == 3:
-            # Verificar que sean los dedos específicos (índice, medio, anular)
+            # Verificar que sean índice, medio y anular
             if fingers[1] == 1 and fingers[2] == 1 and fingers[3] == 1:
-                return 'B'
+                return 'B'  # Tres dedos emergencia
             else:
                 return None
-        # Puño cerrado (0 dedos)
+        
         elif total_fingers == 0:
-            return 'C'
+            return 'C'  # Puño cerrado
+        
+        #  NUEVO: Gesto D - Pulgar arriba (emergencia médica)
+        elif total_fingers == 1:
+            # Solo pulgar extendido - emergencia médica
+            if fingers[0] == 1:
+                return 'D'  # Pulgar auxilio médico
+            else:
+                return None
+        
+        # Flexibilidades para mejor detección
+        elif total_fingers == 4:
+            return 'A'  # Casi mano abierta
+        elif total_fingers == 2 and fingers[1] == 1 and fingers[2] == 1:
+            return 'B'  # Dos dedos centrales
+        
         else:
             return None
     
@@ -157,10 +173,12 @@ class DetectorGestos:
                                 (bbox[2], bbox[3]), 
                                 color_bbox, 3)
                     
-                    # Preparar texto del gesto
-                    texto_gesto = f"Gesto: {gesture}"
+                    # ACTUALIZADO: Mostrar nombre correcto del gesto
+                    nombre_gesto = self.gestures.get(gesture, "Desconocido")
+                    texto_gesto = f"Gesto: {gesture} - {nombre_gesto}"
+                    
                     if efecto_activo:
-                        texto_gesto += " ✅ DETECTADO"
+                        texto_gesto += "  DETECTADO"
                     elif gesto_confirmado:
                         texto_gesto += " ✔"
                     
@@ -168,7 +186,7 @@ class DetectorGestos:
                     cv2.putText(annotated_frame, 
                               texto_gesto, 
                               (bbox[0], bbox[1] - 10), 
-                              cv2.FONT_HERSHEY_SIMPLEX, 0.8, color_texto, 2)
+                              cv2.FONT_HERSHEY_SIMPLEX, 0.7, color_texto, 2)
                     
                     # Dibujar información adicional si el efecto está activo
                     if efecto_activo:
@@ -177,9 +195,9 @@ class DetectorGestos:
                                   (bbox[0], bbox[3] + 25),
                                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, color_texto, 2)
         
-        # Mostrar información del sistema
+       
         cv2.putText(annotated_frame, 
-                   "Sistema de Deteccion por Gestos", 
+                   "Sistema de Deteccion de Auxilio", 
                    (10, 30), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         
@@ -190,9 +208,9 @@ class DetectorGestos:
                       (10, 60),
                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 200, 0), 2)
         
-        # Mostrar instrucciones
+        
         cv2.putText(annotated_frame, 
-                   "A: Mano abierta | B: 3 dedos | C: Puño (Mantener 1.5s para repetir)", 
+                   "A: Mano abierta | B: 3 dedos | C: Puño | D: Pulgar medico", 
                    (10, annotated_frame.shape[0] - 10), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
