@@ -20,6 +20,5 @@ def verificar_dependencias():
         import tkinter
         import PIL
         return True
-    except ImportError as e:
-        print(f"Error: Falta dependencia - {e}")
+    except ImportError:
         return False

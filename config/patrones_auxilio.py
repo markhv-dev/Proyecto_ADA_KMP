@@ -44,9 +44,7 @@ class PatronesAuxilio:
         }
     
     def obtener_patron(self, nombre_patron):
-        """Obtener información de un patrón específico"""
         return self.patrones_auxilio.get(nombre_patron, None)
     
     def listar_patrones(self):
-        """Listar todos los patrones disponibles"""
         return list(self.patrones_auxilio.keys())

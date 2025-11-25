@@ -9,26 +9,24 @@ class VentanaEstado:
         self.ventana.geometry("700x500")
         
         self._crear_interfaz()
-        
-        # Configurar cierre seguro
         self.ventana.protocol("WM_DELETE_WINDOW", self.cerrar)
         
     def _crear_interfaz(self):
         frame_principal = ttk.Frame(self.ventana, padding="20")
         frame_principal.pack(fill=tk.BOTH, expand=True)
         
-        # Título
+        # Título principal
         titulo = ttk.Label(frame_principal, 
                           text="Estado del Sistema - Reconocimiento por Gestos", 
                           font=("Arial", 14, "bold"))
         titulo.pack(pady=(0, 20))
         
-        # Información de gestos
+        # Información de gestos reconocidos
         frame_info_gestos = ttk.LabelFrame(frame_principal, text="Gestos Reconocidos", padding="10")
         frame_info_gestos.pack(fill=tk.X, pady=(0, 10))
         
         info_gestos = ttk.Label(frame_info_gestos, 
-                               text="A: Mano abierta (5 dedos)   |   B: 3 dedos arriba   |   C: Puño cerrado",
+                               text="A: Mano abierta (5 dedos)   |   B: 3 dedos arriba   |   C: Puño cerrado   |   D: Pulgar medico",
                                justify=tk.CENTER,
                                font=("Arial", 10))
         info_gestos.pack()
@@ -56,7 +54,7 @@ class VentanaEstado:
         self.label_contador.pack(side=tk.RIGHT)
         
         # Estado del patrón
-        frame_patron = ttk.LabelFrame(frame_principal, text="Estado del patrón 'AAABBBCCC'", padding="15")
+        frame_patron = ttk.LabelFrame(frame_principal, text="Estado del patrón", padding="15")
         frame_patron.pack(fill=tk.X, pady=(0, 10))
         
         self.label_patron = ttk.Label(frame_patron, 
@@ -65,22 +63,21 @@ class VentanaEstado:
                                      foreground="green")
         self.label_patron.pack()
         
-        # Información adicional
+        # Información del sistema
         frame_info = ttk.LabelFrame(frame_principal, text="Información del Sistema", padding="10")
         frame_info.pack(fill=tk.BOTH, expand=True)
         
         info_text = (
             "• El sistema detecta gestos de mano en tiempo real\n"
             "• Cada gesto válido se agrega a la secuencia\n" 
-            "• Cuando se detecta el patrón AAABBBCCC se activa una alerta\n"
-            "• Solo se generan alertas para patrones nuevos (no solapados)"
+            "• Cuando se detecta un patrón se activa una alerta\n"
         )
         
         label_info = ttk.Label(frame_info, text=info_text, justify=tk.LEFT, font=("Arial", 10))
         label_info.pack(anchor=tk.W)
         
     def actualizar_estado(self, secuencia, patron_detectado):
-        # Actualizar secuencia (mostrar últimos 50 caracteres)
+        # Actualizar secuencia
         if secuencia:
             secuencia_mostrar = secuencia[-50:] if len(secuencia) > 50 else secuencia
             self.label_secuencia.configure(text=secuencia_mostrar)

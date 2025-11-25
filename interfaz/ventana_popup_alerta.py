@@ -10,7 +10,7 @@ class VentanaAlertaPopup:
         self.ventana.geometry("400x200")
         self.ventana.configure(bg='red')
         
-        # Centrar ventana
+        # Centrar ventana en la pantalla
         self.ventana.geometry("+%d+%d" % (
             self.ventana.winfo_screenwidth() // 2 - 200,
             self.ventana.winfo_screenheight() // 2 - 100
@@ -20,7 +20,7 @@ class VentanaAlertaPopup:
         self.ventana.transient()
         self.ventana.grab_set()
         
-        # Texto de alerta
+        # Texto de alerta principal
         label_alerta = ttk.Label(
             self.ventana, 
             text="ALERTA", 
@@ -30,13 +30,13 @@ class VentanaAlertaPopup:
         )
         label_alerta.pack(expand=True)
         
-        # Iniciar temporizador para cerrar automáticamente
+        # Temporizador para cierre automático
         self.hilo_temporizador = threading.Thread(target=self._cerrar_automaticamente)
         self.hilo_temporizador.daemon = True
         self.hilo_temporizador.start()
         
     def _cerrar_automaticamente(self):
-        time.sleep(2)  # 2 segundos
+        time.sleep(2)  # 2 segundos de visualización
         self.ventana.after(0, self.cerrar)
         
     def cerrar(self):
